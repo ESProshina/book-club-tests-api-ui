@@ -3,19 +3,13 @@ package api;
 import io.qameta.allure.Step;
 import io.restassured.response.Response;
 import io.restassured.specification.ResponseSpecification;
-import models.reviews.ReviewBodyModel;
-import models.reviews.ReviewNotRatingBodyModel;
-import models.reviews.ReviewPatchBodyModel;
-import models.reviews.ReviewResponseModel;
-import models.reviews.ReviewsListResponseModel;
+import models.reviews.*;
 
 import static io.restassured.RestAssured.given;
 import static specs.BaseSpec.baseRequestSpec;
 import static specs.reviews.ReviewsSpec.*;
 
 public class ReviewsApiClient {
-
-    // ==================== READ ====================
 
     @Step("Получение всех ревью GET /clubs/reviews/")
     public ReviewsListResponseModel getReviews() {
@@ -52,23 +46,9 @@ public class ReviewsApiClient {
                 .response();
     }
 
-    // ==================== CREATE ====================
 
     @Step("Создание ревью POST /clubs/reviews/")
     public ReviewResponseModel createReview(String accessToken, ReviewBodyModel body) {
-        return given(baseRequestSpec)
-                .header("Authorization", "Bearer " + accessToken)
-                .body(body)
-                .when()
-                .post("/clubs/reviews/")
-                .then()
-                .spec(reviewCreatedResponseSpec)
-                .extract()
-                .as(ReviewResponseModel.class);
-    }
-
-    @Step("Создание ревью без оценки POST /clubs/reviews/")
-    public ReviewResponseModel createReviewWithoutRating(String accessToken, ReviewNotRatingBodyModel body) {
         return given(baseRequestSpec)
                 .header("Authorization", "Bearer " + accessToken)
                 .body(body)
@@ -96,10 +76,9 @@ public class ReviewsApiClient {
                 .response();
     }
 
-    /**
-     * Создание ревью БЕЗ применения спецификации — для debug.
-     */
-    public Response createReviewRaw(String accessToken, ReviewBodyModel body) {
+    @Step("Создание ревью без оценки со спецификацией")
+    public Response createReviewWithSpec(String accessToken, ReviewNotRatingBodyModel body,
+                                         ResponseSpecification spec) {
         var request = given(baseRequestSpec).body(body);
         if (accessToken != null && !accessToken.isEmpty()) {
             request.header("Authorization", "Bearer " + accessToken);
@@ -108,11 +87,11 @@ public class ReviewsApiClient {
                 .when()
                 .post("/clubs/reviews/")
                 .then()
+                .spec(spec)
                 .extract()
                 .response();
     }
 
-    // ==================== UPDATE ====================
 
     @Step("Полное обновление ревью PUT /clubs/reviews/{id}/")
     public ReviewResponseModel updateReview(String accessToken, int id, ReviewBodyModel body) {
@@ -174,7 +153,6 @@ public class ReviewsApiClient {
                 .response();
     }
 
-    // ==================== DELETE ====================
 
     @Step("Удаление ревью DELETE /clubs/reviews/{id}/")
     public void deleteReview(String accessToken, int id) {

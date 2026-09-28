@@ -46,7 +46,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
     testCompileOnly 'org.projectlombok:lombok:1.18.30'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
-}
+    testImplementation 'com.codeborne:selenide:7.6.0'
+    }
 
 test {
     useJUnitPlatform()

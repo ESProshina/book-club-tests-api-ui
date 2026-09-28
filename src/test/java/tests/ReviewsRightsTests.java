@@ -1,47 +1,49 @@
 package tests;
 
+import io.qameta.allure.*;
+import io.restassured.response.Response;
 import models.clubs.ClubModel;
-import models.clubs.CreateClubBodyModel;
 import models.login.LoginBodyModel;
 import models.registration.RegistrationBodyModel;
 import models.reviews.ReviewBodyModel;
 import models.reviews.ReviewPatchBodyModel;
 import models.reviews.ReviewResponseModel;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static io.qameta.allure.Allure.step;
 import static org.assertj.core.api.Assertions.assertThat;
 import static specs.reviews.ReviewsSpec.*;
 import static tests.TestData.*;
 
+@Owner("Elena Black")
+@Epic("Отзывы на клубы")
+@Feature("Права доступа к отзывам")
+@Story("Только автор может изменять и удалять свой отзыв")
 public class ReviewsRightsTests extends TestBase {
 
     private String ownerToken;
+    private String ownerUsername;
     private String foreignToken;
+    private String foreignUsername;
     private Integer clubId;
     private Integer reviewId;
 
     @BeforeEach
-    public void setup() {
-        ownerToken = api.auth.loginAndGetAccessToken(
-                new LoginBodyModel(LOGIN_USERNAME, LOGIN_PASSWORD));
+    public void prepareTestData() {
+        ownerUsername = faker.name().username() + "_owner_" + System.currentTimeMillis();
+        foreignUsername = faker.name().username() + "_foreign_" + System.currentTimeMillis();
 
-        ClubModel club = api.clubs.createClub(ownerToken,
-                new CreateClubBodyModel(CLUB_BOOK_TITLE, CLUB_BOOK_AUTHORS,
-                        CLUB_PUBLICATION_YEAR, CLUB_DESCRIPTION, CLUB_TELEGRAM_LINK));
+         api.users.register(new RegistrationBodyModel(ownerUsername, passwordDef));
+        ownerToken = api.auth.login(new LoginBodyModel(ownerUsername, passwordDef)).access();
+
+         ClubModel club = api.clubs.createClub(ownerToken, uniqueClubBody());
         clubId = club.id();
-
-        ReviewResponseModel review = api.reviews.createReview(ownerToken,
-                new ReviewBodyModel(clubId, REVIEW_TEXT, REVIEW_ASSESSMENT, REVIEW_READ_PAGES));
+        ReviewResponseModel review = api.reviews.createReview(ownerToken, uniqueReviewBody());
         reviewId = review.id();
 
-        String foreignUser = "foreign_" + System.currentTimeMillis();
-        api.users.register(new RegistrationBodyModel(foreignUser, "pass123456"));
-        foreignToken = api.auth.loginAndGetAccessToken(
-                new LoginBodyModel(foreignUser, "pass123456"));
+
+        api.users.register(new RegistrationBodyModel(foreignUsername, passwordDef));
+        foreignToken = api.auth.login(new LoginBodyModel(foreignUsername, passwordDef)).access();
     }
 
     @AfterEach
@@ -54,64 +56,122 @@ public class ReviewsRightsTests extends TestBase {
         }
     }
 
+    private models.clubs.CreateClubBodyModel uniqueClubBody() {
+        return new models.clubs.CreateClubBodyModel(
+                "QA Guru, " + faker.book().title() + "_" + System.currentTimeMillis(),
+                faker.book().author(),
+                faker.number().numberBetween(2000, 2026),
+                faker.lorem().sentence(),
+                "https://t.me/" + faker.internet().uuid()
+        );
+    }
+
+    private ReviewBodyModel uniqueReviewBody() {
+        return new ReviewBodyModel(
+                clubId,
+                faker.lorem().sentence(),
+                faker.number().numberBetween(1, 6),
+                faker.number().numberBetween(1, 500)
+        );
+    }
+
+
     @Test
-    @DisplayName("Негативный: PUT чужого ревью (403 Forbidden)")
-    public void updateForeignReviewPutTest() {
-        ReviewBodyModel updated = new ReviewBodyModel(clubId, "Hacked!", 1, 1);
+    @Description("Попытка изменить чужой отзыв через PUT → 403, отзыв не изменился")
+    @DisplayName("Негативный: PUT чужого отзыва запрещён")
+    @Tags({@Tag("regression"), @Tag("negative")})
+    @Severity(SeverityLevel.CRITICAL)
+    public void errorUpdateForeignReviewPutTest() {
+        ReviewResponseModel before = api.reviews.getReviewById(reviewId);
 
-        var response = api.reviews.updateReviewWithSpec(
-                foreignToken, reviewId, updated, reviewForbiddenResponseSpec);
+        ReviewBodyModel hacked = new ReviewBodyModel(clubId, "Hacked!", 1, 1);
 
-        step("Проверка: статус 403", () -> assertThat(response.statusCode()).isEqualTo(403));
+        Response response = step("PUT чужого отзыва", () ->
+                api.reviews.updateReviewWithSpec(foreignToken, reviewId, hacked, reviewForbiddenResponseSpec));
+
+        step("Проверка текста ошибки", () ->
+                assertThat(response.path("detail").toString()).isEqualTo(errorPermission));
+
+        step("Проверка, что отзыв не изменился", () -> {
+            ReviewResponseModel after = api.reviews.getReviewById(reviewId);
+            assertThat(after.review()).isEqualTo(before.review());
+            assertThat(after.assessment()).isEqualTo(before.assessment());
+            assertThat(after.readPages()).isEqualTo(before.readPages());
+            assertThat(after.modified()).isNull();  // не должно быть updated
+        });
+    }
+
+
+    @Test
+    @Description("Попытка изменить чужой отзыв через PATCH → 403")
+    @DisplayName("Негативный: PATCH чужого отзыва запрещён")
+    @Tags({@Tag("regression"), @Tag("negative")})
+    @Severity(SeverityLevel.CRITICAL)
+    public void errorUpdateForeignReviewPatchTest() {
+        ReviewPatchBodyModel hacked = new ReviewPatchBodyModel("Hacked!", 1, 1);
+
+        Response response = api.reviews.patchReviewWithSpec(
+                foreignToken, reviewId, hacked, reviewForbiddenResponseSpec);
+
+        step("Проверка текста ошибки", () ->
+                assertThat(response.path("detail").toString()).isEqualTo(errorPermission));
+    }
+
+
+    @Test
+    @Description("Попытка удалить чужой отзыв → 403, отзыв существует")
+    @DisplayName("Негативный: DELETE чужого отзыва запрещён")
+    @Tags({@Tag("regression"), @Tag("negative")})
+    @Severity(SeverityLevel.CRITICAL)
+    public void errorDeleteForeignReviewTest() {
+        Response response = step("DELETE чужого отзыва", () ->
+                api.reviews.deleteReviewWithSpec(foreignToken, reviewId, reviewForbiddenResponseSpec));
+
+        step("Проверка текста ошибки", () ->
+                assertThat(response.path("detail").toString()).isEqualTo(errorPermission));
+
+        step("Проверка, что отзыв не удалился", () -> {
+            ReviewResponseModel after = api.reviews.getReviewById(reviewId);
+            assertThat(after).isNotNull();
+            assertThat(after.id()).isEqualTo(reviewId);
+        });
+    }
+
+
+    @Test
+    @Description("Попытка удалить отзыв без токена → 401")
+    @DisplayName("Негативный: DELETE без токена")
+    @Tags({@Tag("regression"), @Tag("negative")})
+    @Severity(SeverityLevel.NORMAL)
+    public void errorDeleteReviewWithoutTokenTest() {
+        Response response = api.reviews.deleteReviewWithSpec(null, reviewId, reviewUnauthorizedResponseSpec);
+
+        step("Проверка статуса 401", () -> assertThat(response.statusCode()).isEqualTo(401));
     }
 
     @Test
-    @DisplayName("Негативный: PATCH чужого ревью (403 Forbidden)")
-    public void updateForeignReviewPatchTest() {
-        ReviewPatchBodyModel patch = new ReviewPatchBodyModel("Hacked!", null, null);
-
-        var response = api.reviews.patchReviewWithSpec(
-                foreignToken, reviewId, patch, reviewForbiddenResponseSpec);
-
-        step("Проверка: статус 403", () -> assertThat(response.statusCode()).isEqualTo(403));
-    }
-
-    @Test
-    @DisplayName("Негативный: DELETE чужого ревью (403 Forbidden)")
-    public void deleteForeignReviewTest() {
-        var response = api.reviews.deleteReviewWithSpec(
-                foreignToken, reviewId, reviewForbiddenResponseSpec);
-
-        step("Проверка: статус 403", () -> assertThat(response.statusCode()).isEqualTo(403));
-    }
-
-    @Test
-    @DisplayName("Позитивный: Автор может удалить своё ревью (204)")
-    public void ownerCanDeleteOwnReviewTest() {
-        var response = api.reviews.deleteReviewWithSpec(
-                ownerToken, reviewId, reviewNoContentResponseSpec);
-
-        step("Проверка: статус 204", () -> assertThat(response.statusCode()).isEqualTo(204));
-        reviewId = null;
-    }
-
-    @Test
-    @DisplayName("Негативный: DELETE ревью без токена (401)")
-    public void deleteReviewWithoutTokenTest() {
-        var response = api.reviews.deleteReviewWithSpec(
-                null, reviewId, reviewUnauthorizedResponseSpec);
-
-        step("Проверка: статус 401", () -> assertThat(response.statusCode()).isEqualTo(401));
-    }
-
-    @Test
-    @DisplayName("Негативный: PUT ревью без токена (401)")
-    public void updateReviewWithoutTokenTest() {
+    @Description("Попытка изменить отзыв без токена → 401")
+    @DisplayName("Негативный: PUT без токена")
+    @Tags({@Tag("regression"), @Tag("negative")})
+    @Severity(SeverityLevel.NORMAL)
+    public void errorUpdateReviewWithoutTokenTest() {
         ReviewBodyModel body = new ReviewBodyModel(clubId, "Test", 5, 100);
 
-        var response = api.reviews.updateReviewWithSpec(
-                null, reviewId, body, reviewUnauthorizedResponseSpec);
+        Response response = api.reviews.updateReviewWithSpec(null, reviewId, body, reviewUnauthorizedResponseSpec);
 
-        step("Проверка: статус 401", () -> assertThat(response.statusCode()).isEqualTo(401));
+        step("Проверка статуса 401", () -> assertThat(response.statusCode()).isEqualTo(401));
+    }
+
+
+    @Test
+    @Description("Автор может удалить свой отзыв")
+    @DisplayName("Позитивный: автор удаляет свой отзыв (204)")
+    @Tags({@Tag("regression"), @Tag("positive")})
+    @Severity(SeverityLevel.CRITICAL)
+    public void ownerCanDeleteOwnReviewTest() {
+        Response response = api.reviews.deleteReviewWithSpec(ownerToken, reviewId, reviewNoContentResponseSpec);
+
+        step("Проверка статуса 204", () -> assertThat(response.statusCode()).isEqualTo(204));
+        reviewId = null;
     }
 }
