@@ -1,0 +1,14 @@
+HELP.md
+build/
+gradle/
+!**/src/main/**
+!**/src/test/**
+
+.idea
+*.iws
+*.iml
+*.ipr
+
+.gradle
+config-local.properties
+*.log
