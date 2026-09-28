@@ -1,5 +1,9 @@
 package tests;
-
+import io.qameta.allure.*;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Story;
 import models.clubs.ClubModel;
 import models.clubs.ClubsListResponseModel;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +12,10 @@ import org.junit.jupiter.api.Test;
 import static io.qameta.allure.Allure.step;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Owner("Elena Black")
+@Epic("Клубы")
+@Feature("Просмотр клубов")
+@Story("Список клубов и пагинация")
 public class ClubsTests extends TestBase {
 
     @Test

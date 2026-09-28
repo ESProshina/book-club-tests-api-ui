@@ -1,5 +1,9 @@
 package tests;
-
+import io.qameta.allure.*;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Story;
 import models.clubs.ClubModel;
 import models.clubs.CreateClubBodyModel;
 import models.clubs.PatchClubBodyModel;
@@ -13,6 +17,11 @@ import static io.qameta.allure.Allure.step;
 import static org.assertj.core.api.Assertions.assertThat;
 import static specs.clubs.ClubsSpec.*;
 import static tests.TestData.*;
+
+@Owner("Elena Black")
+@Epic("Клубы")
+@Feature("Управление клубами")
+@Story("CRUD операции с клубами")
 
 public class ClubsCrudTests extends TestBase {
 

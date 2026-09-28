@@ -1,5 +1,9 @@
 package tests;
-
+import io.qameta.allure.*;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Story;
 import models.registration.RegistrationBodyModel;
 import models.registration.SuccessfulRegistrationResponseModel;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +14,11 @@ import static io.qameta.allure.Allure.step;
 import static org.assertj.core.api.Assertions.assertThat;
 import static specs.registration.RegistrationSpec.registrationResponse400Spec;
 import static tests.TestData.*;
+
+@Owner("Elena Black")
+@Epic("Авторизация")
+@Feature("Логин")
+@Story("Вход в систему")
 
 public class RegistrationTests extends TestBase {
 

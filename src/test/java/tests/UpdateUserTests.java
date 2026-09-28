@@ -1,4 +1,5 @@
 package tests;
+import io.qameta.allure.*;
 
 import models.login.LoginBodyModel;
 import models.user.UpdateUserBodyModel;
@@ -11,6 +12,11 @@ import static io.qameta.allure.Allure.step;
 import static org.assertj.core.api.Assertions.assertThat;
 import static specs.user.UserSpec.*;
 import static tests.TestData.*;
+
+@Owner("Elena Black")
+@Epic("Пользователь")
+@Feature("Обновление профиля")
+@Story("Обновление данных пользователя")
 
 public class UpdateUserTests extends TestBase {
 

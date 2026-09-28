@@ -1,5 +1,9 @@
 package tests;
-
+import io.qameta.allure.*;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Story;
 import models.login.LoginBodyModel;
 import models.logout.LogoutBodyModel;
 import org.junit.jupiter.api.DisplayName;
@@ -10,6 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static specs.logout.LogoutSpec.logoutResponse400Spec;
 import static specs.logout.LogoutSpec.logoutResponse401Spec;
 import static tests.TestData.*;
+
+@Owner("Elena Black")
+@Epic("Авторизация")
+@Feature("Логин")
+@Story("Вход в систему")
 
 public class LogoutTests extends TestBase {
 
