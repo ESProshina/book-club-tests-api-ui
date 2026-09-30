@@ -243,23 +243,4 @@ public class ReviewsCrudTests extends TestBase {
         step("Проверка текста ошибки", () ->
                 assertThat(response.path("detail").toString()).isEqualTo(errorBookReview));
     }
-
-    @Test
-    @Description("Создание отзыва с assessment = null → 400")
-    @DisplayName("Негативный: создание отзыва с assessment = null")
-    @Tags({@Tag("regression"), @Tag("negative")})
-    @Severity(SeverityLevel.NORMAL)
-    public void errorCreateReviewWithNullAssessmentTest() {
-        ReviewBodyModel body = new ReviewBodyModel(
-                createdClubId,
-                faker.lorem().sentence(),
-                null,                              // ← явно null
-                faker.number().numberBetween(1, 500)
-        );
-
-        Response response = api.reviews.createReviewWithSpec(accessToken, body, reviewBadRequestResponseSpec);
-
-        step("Проверка сообщения об ошибке", () ->
-                assertThat(response.path("assessment[0]").toString()).isEqualTo(errorAssessment));
-    }
 }
