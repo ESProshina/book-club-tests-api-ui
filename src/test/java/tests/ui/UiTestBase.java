@@ -24,7 +24,7 @@ public class UiTestBase extends TestBase {
         Configuration.timeout = 10_000;
 
         String remote = System.getProperty("remote");
-        if (remote != null && !remote.isEmpty()) ;{
+        if (remote != null && !remote.isEmpty()) {
             Configuration.remote = remote;
         }
     }
