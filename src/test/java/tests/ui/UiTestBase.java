@@ -10,6 +10,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import tests.TestBase;
 
+import java.util.Map;
+
 import static com.codeborne.selenide.Selenide.closeWebDriver;
 
 public class UiTestBase extends TestBase {
