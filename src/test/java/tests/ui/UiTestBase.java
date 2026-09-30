@@ -26,6 +26,10 @@ public class UiTestBase extends TestBase {
         String remote = System.getProperty("remote");
         if (remote != null && !remote.isEmpty()) {
             Configuration.remote = remote;
+            Configuration.browserCapabilities.setCapability("selenoid:options", Map.of(
+                    "enableVNC", true,
+                    "enableVideo", true
+            ));
         }
     }
 
