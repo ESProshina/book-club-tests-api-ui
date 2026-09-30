@@ -25,6 +25,7 @@ public class UiTestBase extends TestBase {
         Configuration.baseUrl = System.getProperty("baseUrl", "https://book-club.qa.guru");
         Configuration.pageLoadTimeout = 30_000;
         Configuration.timeout = 10_000;
+        Configuration.browserBinary = null;
 
         String remote = System.getProperty("remote");
         if (remote != null && !remote.isEmpty()) {
