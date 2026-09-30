@@ -20,24 +20,23 @@ public class UiTestBase extends TestBase {
     @BeforeAll
     public static void setUpUi() {
         Configuration.browser = System.getProperty("browser", "chrome");
-        Configuration.browserVersion = System.getProperty("browserVersion", "");
         Configuration.browserSize = System.getProperty("browserSize", "1920x1080");
         Configuration.baseUrl = System.getProperty("baseUrl", "https://book-club.qa.guru");
-        Configuration.pageLoadTimeout = 30_000;
-        Configuration.timeout = 10_000;
-        Configuration.browserBinary = null;
+        Configuration.pageLoadTimeout = 60_000;
+        Configuration.timeout = 20_000;
 
         String remote = System.getProperty("remote");
         if (remote != null && !remote.isEmpty()) {
             Configuration.remote = remote;
-
-            DesiredCapabilities capabilities = new DesiredCapabilities();
-            capabilities.setCapability("selenoid:options", Map.of(
-                    "enableVNC", true,
-                    "enableVideo", true
-            ));
-            Configuration.browserCapabilities = capabilities;
         }
+
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("browserName", "chrome");
+        capabilities.setCapability("selenoid:options", Map.of(
+                "enableVNC", false,
+                "enableVideo", false
+        ));
+        Configuration.browserCapabilities = capabilities;
     }
 
     @BeforeEach
