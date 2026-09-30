@@ -23,9 +23,8 @@ public class UiTestBase extends TestBase {
         Configuration.pageLoadTimeout = 30_000;
         Configuration.timeout = 10_000;
 
-        // Если передан remote URL (Selenoid/Selenoid) — используем его
         String remote = System.getProperty("remote");
-        if (remote != null && !remote.isEmpty()) {
+        if (remote != null && !remote.isEmpty()) ;{
             Configuration.remote = remote;
         }
     }
